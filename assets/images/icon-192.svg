@@ -1,0 +1,46 @@
+<svg width="192" height="192" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <!-- 背景 -->
+  <rect width="192" height="192" fill="#1A0033" rx="24"/>
+  
+  <!-- 魔法陣 -->
+  <g transform="translate(96,96)">
+    <!-- 外円 -->
+    <circle r="80" fill="none" stroke="#C846FF" stroke-width="3" opacity="0.8"/>
+    <circle r="65" fill="none" stroke="#C846FF" stroke-width="2" opacity="0.6"/>
+    
+    <!-- 六芒星 -->
+    <g stroke="#C846FF" stroke-width="2.5" fill="none" opacity="0.9">
+      <!-- 上向き三角形 -->
+      <path d="M0,-50 L43.3,25 L-43.3,25 Z"/>
+      <!-- 下向き三角形 -->
+      <path d="M0,50 L43.3,-25 L-43.3,-25 Z"/>
+    </g>
+    
+    <!-- 中央の円 -->
+    <circle r="15" fill="#C846FF" opacity="0.7"/>
+    <circle r="8" fill="#FFFFFF" opacity="0.9"/>
+    
+    <!-- 装飾的な線 -->
+    <g stroke="#C846FF" stroke-width="1.5" opacity="0.5">
+      <line x1="-75" y1="0" x2="-55" y2="0"/>
+      <line x1="75" y1="0" x2="55" y2="0"/>
+      <line x1="0" y1="-75" x2="0" y2="-55"/>
+      <line x1="0" y1="75" x2="0" y2="55"/>
+    </g>
+  </g>
+  
+  <!-- カエルアイコン（小さく） -->
+  <g transform="translate(40,40) scale(0.5)">
+    <ellipse cx="0" cy="10" rx="15" ry="12" fill="#4CAF50" opacity="0.7"/>
+    <circle cx="-8" cy="3" r="4" fill="#66BB6A"/>
+    <circle cx="8" cy="3" r="4" fill="#66BB6A"/>
+    <circle cx="-8" cy="1" r="2" fill="#1B5E20"/>
+    <circle cx="8" cy="1" r="2" fill="#1B5E20"/>
+  </g>
+  
+  <!-- 卵アイコン（小さく） -->
+  <g transform="translate(150,150) scale(0.6)">
+    <ellipse cx="0" cy="0" rx="8" ry="12" fill="#FFF9C4" opacity="0.8"/>
+    <ellipse cx="0" cy="0" rx="6" ry="10" fill="#FFF59D" opacity="0.6"/>
+  </g>
+</svg>
