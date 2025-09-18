@@ -248,14 +248,17 @@ class CameraManager {
     
     // カメラフレームを Three.js テクスチャとして取得
     getThreeTexture() {
+        console.log(`Getting Three texture - initialized: ${this.isInitialized}, video: ${!!this.video}`);
         Utils.log(`Getting Three texture - initialized: ${this.isInitialized}, video: ${!!this.video}`);
         
         if (!this.isInitialized || !this.video) {
+            console.warn('Cannot create texture: camera not initialized or video not available');
             Utils.warn('Cannot create texture: camera not initialized or video not available');
             return null;
         }
         
         if (this.video.videoWidth === 0 || this.video.videoHeight === 0) {
+            console.warn('Video dimensions are 0, texture not ready yet');
             Utils.warn('Video dimensions are 0, texture not ready yet');
             return null;
         }
@@ -267,9 +270,11 @@ class CameraManager {
             texture.format = THREE.RGBFormat;
             texture.flipY = false; // カメラ映像の場合は通常false
             
+            console.log(`Video texture created: ${this.video.videoWidth}x${this.video.videoHeight}`);
             Utils.log(`Video texture created: ${this.video.videoWidth}x${this.video.videoHeight}`);
             return texture;
         } catch (error) {
+            console.error('Failed to create video texture:', error);
             Utils.error('Failed to create video texture:', error);
             return null;
         }

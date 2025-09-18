@@ -152,12 +152,30 @@ async function initializeCameraFromUser() {
         await initializeCamera();
         updateCameraStatus('📱 カメラ: 準備完了 ✅');
         
-        // 3D背景更新を再試行
-        if (use3DMode && threeDRenderer && cameraManager.isInitialized) {
-            setTimeout(() => {
-                threeDRenderer.setCameraBackground(cameraManager);
-                Utils.log('3D camera background updated');
-            }, 1000); // カメラが完全に起動するまで少し待つ
+        // 3D背景更新を再試行（複数回チェック）
+        if (use3DMode && threeDRenderer) {
+            const checkAndSetBackground = () => {
+                if (cameraManager && cameraManager.isInitialized) {
+                    threeDRenderer.setCameraBackground(cameraManager);
+                    Utils.log('3D camera background updated');
+                    
+                    // 背景が正しく設定されたかチェック
+                    setTimeout(() => {
+                        if (threeDRenderer.scene.background) {
+                            updateCameraStatus('📱 カメラ: 背景表示中 🎥');
+                        } else {
+                            Utils.warn('Camera background not set, retrying...');
+                            threeDRenderer.setCameraBackground(cameraManager);
+                        }
+                    }, 2000);
+                } else {
+                    Utils.warn('Camera not ready yet, retrying...');
+                    setTimeout(checkAndSetBackground, 1000);
+                }
+            };
+            
+            // 1秒後に開始、カメラが完全に起動するまで待つ
+            setTimeout(checkAndSetBackground, 1000);
         }
         
     } catch (error) {
@@ -177,6 +195,33 @@ function skipCameraInit() {
     if (guide) guide.style.display = 'none';
     
     updateCameraStatus('📱 カメラ: 無効（静的背景）');
+}
+
+// デバッグ用カメラ状態確認
+function debugCameraStatus() {
+    let status = '🔍 カメラ状態:\n\n';
+    
+    if (cameraManager) {
+        status += `• 初期化済み: ${cameraManager.isInitialized}\n`;
+        status += `• サポート: ${cameraManager.isSupported}\n`;
+        status += `• Video要素: ${!!cameraManager.video}\n`;
+        
+        if (cameraManager.video) {
+            status += `• Video準備: ${cameraManager.video.readyState}\n`;
+            status += `• 解像度: ${cameraManager.video.videoWidth}x${cameraManager.video.videoHeight}\n`;
+        }
+    } else {
+        status += '• カメラマネージャー: 未初期化\n';
+    }
+    
+    if (use3DMode && threeDRenderer) {
+        status += `• 3D背景: ${!!threeDRenderer.scene.background}\n`;
+        status += `• VideoTexture: ${!!threeDRenderer.videoTexture}\n`;
+    }
+    
+    status += `• GAME_STATE.cameraReady: ${GAME_STATE.cameraReady}`;
+    
+    alert(status);
 }
 
 // ローディング画面非表示
