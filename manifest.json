@@ -1,0 +1,43 @@
+{
+  "name": "AR召喚システム - 魔法陣カエル卵",
+  "short_name": "AR召喚",
+  "description": "紫の魔法陣から召喚するAR体験アプリ",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "theme_color": "#C846FF",
+  "background_color": "#1a0033",
+  "scope": "/",
+  "lang": "ja",
+  "categories": ["entertainment", "games", "utilities"],
+  "icons": [
+    {
+      "src": "assets/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "assets/images/screenshot-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ],
+  "features": [
+    "camera",
+    "microphone",
+    "webgl"
+  ],
+  "permissions": [
+    "camera"
+  ]
+}
