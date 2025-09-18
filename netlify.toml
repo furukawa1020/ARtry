@@ -36,12 +36,8 @@
     # HTML キャッシュ
     Cache-Control = "public, max-age=3600"
 
-# SPA設定（必要に応じて）
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  conditions = {Role = ["admin"]}
+# SPA設定（SPAではないので削除）
+# 静的サイトなのでリダイレクト不要
 
 # カスタムドメイン設定例
 # [[redirects]]
