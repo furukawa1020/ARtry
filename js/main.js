@@ -80,8 +80,8 @@ async function initializeManagers() {
         window.eggManager = eggManager;
         window.audioManager = audioManager;
         
-        // カメラ初期化
-        await initializeCamera();
+        // カメラ初期化は最初のユーザーアクション後に実行
+        // スマホではユーザーアクションが必要
         
         // ローディング画面非表示
         hideLoadingScreen();
@@ -91,6 +91,9 @@ async function initializeManagers() {
         
         GAME_STATE.initialized = true;
         
+        // ユーザーアクション待ち表示
+        showCameraInitPrompt();
+        
     } catch (error) {
         Utils.error('System initialization failed:', error);
         showErrorMessage('システムの初期化に失敗しました');
@@ -99,13 +102,53 @@ async function initializeManagers() {
 
 // カメラ初期化
 async function initializeCamera() {
+    if (GAME_STATE.cameraReady) return; // 既に初期化済み
+    
     try {
         await cameraManager.initialize();
         Utils.log('Camera system ready');
+        updateCameraStatus('📱 カメラ: 起動中');
     } catch (error) {
         Utils.warn('Camera initialization failed, using fallback');
+        updateCameraStatus('📱 カメラ: 静的背景');
         // フォールバック背景は CameraManager で自動処理される
     }
+}
+
+// カメラ初期化プロンプト表示
+function showCameraInitPrompt() {
+    const guide = document.getElementById('camera-guide');
+    if (guide) {
+        guide.innerHTML = `
+            <h3>📱 AR体験を開始</h3>
+            <p>カメラを使用してAR魔法陣を体験できます</p>
+            <button onclick="initializeCameraFromUser()" 
+                    style="background: white; color: #C846FF; border: none; padding: 15px 30px; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 5px;">
+                カメラを有効化
+            </button>
+            <button onclick="skipCameraInit()" 
+                    style="background: rgba(255,255,255,0.3); color: white; border: 1px solid white; padding: 15px 30px; border-radius: 5px; cursor: pointer; font-size: 16px; margin: 5px;">
+                スキップ（静的背景）
+            </button>
+        `;
+        guide.style.display = 'block';
+    }
+}
+
+// ユーザーアクションからカメラ初期化
+async function initializeCameraFromUser() {
+    const guide = document.getElementById('camera-guide');
+    if (guide) guide.style.display = 'none';
+    
+    await initializeCamera();
+}
+
+// カメラ初期化スキップ
+function skipCameraInit() {
+    const guide = document.getElementById('camera-guide');
+    if (guide) guide.style.display = 'none';
+    
+    updateCameraStatus('📱 カメラ: 無効（静的背景）');
 }
 
 // ローディング画面非表示
@@ -133,6 +176,14 @@ function startPerformanceMonitoring() {
         updatePerformanceUI();
         adjustQualityLevel();
     }, 1000);
+}
+
+// カメラステータス更新
+function updateCameraStatus(status) {
+    const statusElement = document.getElementById('camera-status');
+    if (statusElement) {
+        statusElement.textContent = status;
+    }
 }
 
 // メインループ
@@ -231,48 +282,7 @@ function drawSystems() {
     }
 }
 
-// タッチ開始処理
-function touchStarted() {
-    touchStartTime = millis();
-    isLongPress = false;
-    
-    // 長押し判定
-    setTimeout(() => {
-        if (millis() - touchStartTime > 500) {
-            isLongPress = true;
-            handleLongPress(mouseX, mouseY);
-        }
-    }, 500);
-    
-    // ブラウザのデフォルト動作を防ぐ
-    return false;
-}
-
-// タッチ終了処理
-function touchEnded() {
-    const touchDuration = millis() - touchStartTime;
-    
-    if (!isLongPress && touchDuration < 500) {
-        handleTap(mouseX, mouseY);
-    }
-    
-    return false;
-}
-
-// マウスクリック処理（デスクトップ用）
-function mousePressed() {
-    if (!GAME_STATE.initialized) return;
-    
-    // タッチデバイス以外の場合のみ処理
-    const deviceInfo = Utils.getDeviceInfo();
-    if (!deviceInfo.isMobile) {
-        handleTap(mouseX, mouseY);
-    }
-    
-    return false;
-}
-
-// タップ処理
+// タップ処理（新しいイベントシステム用）
 function handleTap(x, y) {
     Utils.log(`Tap at (${x}, ${y})`);
     
@@ -638,6 +648,98 @@ function beforeUnload() {
 
 // イベントリスナー設定
 window.addEventListener('beforeunload', beforeUnload);
+
+// マウス・タッチイベント設定
+function setupEventListeners() {
+    const container = document.getElementById('container');
+    if (!container) return;
+    
+    // タッチイベント（スマホ対応）
+    container.addEventListener('touchstart', handleTouchStart, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd, { passive: false });
+    
+    // マウスイベント（PC対応）
+    container.addEventListener('mousedown', handleMouseDown);
+    container.addEventListener('mouseup', handleMouseUp);
+    
+    // タッチ座標を正規化
+    function getNormalizedCoordinates(event) {
+        const rect = container.getBoundingClientRect();
+        let clientX, clientY;
+        
+        if (event.touches) {
+            // タッチイベント
+            clientX = event.touches[0]?.clientX || event.changedTouches[0]?.clientX;
+            clientY = event.touches[0]?.clientY || event.changedTouches[0]?.clientY;
+        } else {
+            // マウスイベント
+            clientX = event.clientX;
+            clientY = event.clientY;
+        }
+        
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top
+        };
+    }
+    
+    function handleTouchStart(event) {
+        event.preventDefault();
+        touchStartTime = Date.now();
+        isLongPress = false;
+        
+        const coords = getNormalizedCoordinates(event);
+        
+        // 長押し判定用タイマー
+        setTimeout(() => {
+            if (touchStartTime > 0) {
+                isLongPress = true;
+                handleLongPress(coords.x, coords.y);
+            }
+        }, 800);
+    }
+    
+    function handleTouchEnd(event) {
+        event.preventDefault();
+        const touchDuration = Date.now() - touchStartTime;
+        touchStartTime = 0;
+        
+        if (!isLongPress && touchDuration < 800) {
+            const coords = getNormalizedCoordinates(event);
+            handleTap(coords.x, coords.y);
+        }
+    }
+    
+    function handleMouseDown(event) {
+        touchStartTime = Date.now();
+        isLongPress = false;
+        
+        const coords = getNormalizedCoordinates(event);
+        
+        // 長押し判定用タイマー
+        setTimeout(() => {
+            if (touchStartTime > 0) {
+                isLongPress = true;
+                handleLongPress(coords.x, coords.y);
+            }
+        }, 800);
+    }
+    
+    function handleMouseUp(event) {
+        const touchDuration = Date.now() - touchStartTime;
+        touchStartTime = 0;
+        
+        if (!isLongPress && touchDuration < 800) {
+            const coords = getNormalizedCoordinates(event);
+            handleTap(coords.x, coords.y);
+        }
+    }
+}
+
+// システム初期化後にイベントリスナー設定
+document.addEventListener('DOMContentLoaded', () => {
+    setupEventListeners();
+});
 
 // サービスワーカー登録（オフライン対応）
 if ('serviceWorker' in navigator) {

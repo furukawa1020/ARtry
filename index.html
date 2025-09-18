@@ -38,6 +38,10 @@
             position: relative;
             width: 100vw;
             height: 100vh;
+            touch-action: none; /* スマホのデフォルト動作を無効化 */
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
         
         #ui-overlay {
@@ -106,6 +110,34 @@
         .hidden {
             opacity: 0;
             pointer-events: none;
+        }
+        
+        /* スマホ最適化 */
+        @media (max-width: 768px) {
+            #ui-overlay {
+                font-size: 12px;
+                top: 5px;
+                left: 5px;
+            }
+            
+            .instructions {
+                font-size: 16px;
+                padding: 15px;
+            }
+            
+            #camera-guide {
+                max-width: 90vw !important;
+                padding: 15px !important;
+                font-size: 14px !important;
+            }
+        }
+        
+        /* 縦画面スマホ */
+        @media (max-width: 480px) and (orientation: portrait) {
+            .instructions {
+                bottom: 80px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
