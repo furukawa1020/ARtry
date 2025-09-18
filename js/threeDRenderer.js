@@ -157,7 +157,7 @@ class ThreeDRenderer {
         }
     }
     
-    // 3D魔法陣作成
+    // 3D魔法陣作成（リアル画像テクスチャ使用）
     createMagicCircle3D(x, y, id) {
         const group = new THREE.Group();
         
@@ -165,37 +165,40 @@ class ThreeDRenderer {
         const worldPos = this.screenToWorld(x, y);
         group.position.set(worldPos.x, worldPos.y, 0);
         
-        // メインの円盤
-        const circleGeometry = new THREE.RingGeometry(40, 80, 32);
-        const circleMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0xC846FF,
-            transparent: true,
-            opacity: 0.8,
-            side: THREE.DoubleSide
-        });
-        const circleMesh = new THREE.Mesh(circleGeometry, circleMaterial);
-        group.add(circleMesh);
+        // 魔法陣画像テクスチャ読み込み
+        const textureLoader = new THREE.TextureLoader();
+        const magicTexture = textureLoader.load('/assets/images/magic-circle_5540.jpg');
+        magicTexture.wrapS = THREE.ClampToEdgeWrapping;
+        magicTexture.wrapT = THREE.ClampToEdgeWrapping;
         
-        // 六芒星（3D押し出し）
-        const starShape = this.createHexagramShape();
-        const starGeometry = new THREE.ExtrudeGeometry(starShape, {
-            depth: 2,
-            bevelEnabled: true,
-            bevelSegments: 2,
-            steps: 2,
-            bevelSize: 1,
-            bevelThickness: 1
-        });
-        const starMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0xC846FF,
+        // メイン魔法陣（画像テクスチャ）
+        const circleGeometry = new THREE.PlaneGeometry(160, 160, 32, 32);
+        const circleMaterial = new THREE.MeshBasicMaterial({ 
+            map: magicTexture,
             transparent: true,
             opacity: 0.9,
-            emissive: 0x4a0080,
-            emissiveIntensity: 0.3
+            side: THREE.DoubleSide,
+            alphaTest: 0.1
         });
-        const starMesh = new THREE.Mesh(starGeometry, starMaterial);
-        starMesh.position.z = 1;
-        group.add(starMesh);
+        
+        const magicCircle = new THREE.Mesh(circleGeometry, circleMaterial);
+        magicCircle.rotation.x = -Math.PI / 2; // 地面に平行
+        group.add(magicCircle);
+        
+        // 発光エフェクト追加
+        const glowGeometry = new THREE.PlaneGeometry(180, 180);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            color: 0xC846FF,
+            transparent: true,
+            opacity: 0.3,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending
+        });
+        
+        const glowRing = new THREE.Mesh(glowGeometry, glowMaterial);
+        glowRing.rotation.x = -Math.PI / 2;
+        glowRing.position.y = -0.5;
+        group.add(glowRing);
         
         // パーティクルシステム
         const particles = this.createMagicParticles();
@@ -213,7 +216,7 @@ class ThreeDRenderer {
         this.scene.add(group);
         this.magicCircles.set(id, group);
         
-        Utils.log(`3D Magic circle created at (${worldPos.x}, ${worldPos.y})`);
+        Utils.log(`3D Magic circle created with texture at (${worldPos.x}, ${worldPos.y})`);
         return group;
     }
     
@@ -276,52 +279,111 @@ class ThreeDRenderer {
         return new THREE.Points(geometry, material);
     }
     
-    // 3Dカエル作成
+    // 3Dカエル作成（リアルモデル）
     createFrog3D(x, y, id) {
         const group = new THREE.Group();
         
         const worldPos = this.screenToWorld(x, y);
         group.position.set(worldPos.x, worldPos.y, 0);
         
-        // ボディ（楕円体）
-        const bodyGeometry = new THREE.SphereGeometry(15, 16, 12);
-        bodyGeometry.scale(1, 0.8, 1.2);
+        // カエルの体（楕円体）
+        const bodyGeometry = new THREE.SphereGeometry(12, 16, 12);
+        bodyGeometry.scale(1, 0.6, 1.2); // 横に潰して縦長に
         const bodyMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0x00FF88,
+            color: 0x4CAF50,
             shininess: 30,
             transparent: true,
-            opacity: 0.9
+            opacity: 0.95
         });
         const bodyMesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        bodyMesh.position.y = 8;
         bodyMesh.castShadow = true;
         bodyMesh.receiveShadow = true;
         group.add(bodyMesh);
         
-        // 目（2個）
-        const eyeGeometry = new THREE.SphereGeometry(4, 8, 8);
+        // 頭部（大きめの楕円）
+        const headGeometry = new THREE.SphereGeometry(10, 16, 12);
+        headGeometry.scale(1.1, 1, 1.3);
+        const headMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x66BB6A,
+            shininess: 30
+        });
+        const headMesh = new THREE.Mesh(headGeometry, headMaterial);
+        headMesh.position.set(0, 15, 5);
+        headMesh.castShadow = true;
+        group.add(headMesh);
+        
+        // 大きな目（カエルらしく突出）
+        const eyeBaseGeometry = new THREE.SphereGeometry(5, 12, 12);
+        const eyeBaseMaterial = new THREE.MeshPhongMaterial({ color: 0x8BC34A });
+        
+        const leftEyeBase = new THREE.Mesh(eyeBaseGeometry, eyeBaseMaterial);
+        leftEyeBase.position.set(-7, 20, 8);
+        leftEyeBase.castShadow = true;
+        group.add(leftEyeBase);
+        
+        const rightEyeBase = new THREE.Mesh(eyeBaseGeometry, eyeBaseMaterial);
+        rightEyeBase.position.set(7, 20, 8);
+        rightEyeBase.castShadow = true;
+        group.add(rightEyeBase);
+        
+        // 目玉
+        const eyeGeometry = new THREE.SphereGeometry(3.5, 12, 12);
         const eyeMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff });
         
         const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        leftEye.position.set(-6, 8, 10);
-        leftEye.castShadow = true;
+        leftEye.position.set(-7, 22, 10);
         group.add(leftEye);
         
         const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-        rightEye.position.set(6, 8, 10);
-        rightEye.castShadow = true;
+        rightEye.position.set(7, 22, 10);
         group.add(rightEye);
         
-        // 瞳
-        const pupilGeometry = new THREE.SphereGeometry(2, 8, 8);
+        // 瞳（縦長楕円）
+        const pupilGeometry = new THREE.SphereGeometry(1.5, 8, 8);
+        pupilGeometry.scale(1, 1.5, 1);
         const pupilMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
         
         const leftPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
-        leftPupil.position.set(-6, 8, 12);
+        leftPupil.position.set(-7, 22, 12);
         group.add(leftPupil);
         
         const rightPupil = new THREE.Mesh(pupilGeometry, pupilMaterial);
-        rightPupil.position.set(6, 8, 12);
+        rightPupil.position.set(7, 22, 12);
         group.add(rightPupil);
+        
+        // 前足（小さめ）
+        const frontLegGeometry = new THREE.CylinderGeometry(2, 3, 8, 8);
+        const legMaterial = new THREE.MeshPhongMaterial({ color: 0x4CAF50 });
+        
+        const leftFrontLeg = new THREE.Mesh(frontLegGeometry, legMaterial);
+        leftFrontLeg.position.set(-8, 4, 10);
+        leftFrontLeg.rotation.z = 0.3;
+        leftFrontLeg.castShadow = true;
+        group.add(leftFrontLeg);
+        
+        const rightFrontLeg = new THREE.Mesh(frontLegGeometry, legMaterial);
+        rightFrontLeg.position.set(8, 4, 10);
+        rightFrontLeg.rotation.z = -0.3;
+        rightFrontLeg.castShadow = true;
+        group.add(rightFrontLeg);
+        
+        // 後足（大きめ、ジャンプ用）
+        const backLegGeometry = new THREE.CylinderGeometry(3, 4, 12, 8);
+        
+        const leftBackLeg = new THREE.Mesh(backLegGeometry, legMaterial);
+        leftBackLeg.position.set(-10, 2, -5);
+        leftBackLeg.rotation.z = 0.5;
+        leftBackLeg.rotation.x = -0.3;
+        leftBackLeg.castShadow = true;
+        group.add(leftBackLeg);
+        
+        const rightBackLeg = new THREE.Mesh(backLegGeometry, legMaterial);
+        rightBackLeg.position.set(10, 2, -5);
+        rightBackLeg.rotation.z = -0.5;
+        rightBackLeg.rotation.x = -0.3;
+        rightBackLeg.castShadow = true;
+        group.add(rightBackLeg);
         
         // アニメーション用データ
         group.userData = {
@@ -330,32 +392,38 @@ class ThreeDRenderer {
             isJumping: false,
             jumpTarget: { x: worldPos.x, y: worldPos.y, z: 0 },
             velocity: { x: 0, y: 0, z: 0 },
-            phase: Math.random() * Math.PI * 2
+            phase: Math.random() * Math.PI * 2,
+            eyeBlinkTimer: 0
         };
         
         this.scene.add(group);
         this.frogs.set(id, group);
         
+        Utils.log(`Realistic 3D frog created at (${worldPos.x}, ${worldPos.y})`);
         return group;
     }
     
-    // 3D卵作成
+    // 3D卵作成（リアルモデル）
     createEgg3D(x, y, id) {
         const group = new THREE.Group();
         
         const worldPos = this.screenToWorld(x, y);
         group.position.set(worldPos.x, worldPos.y, 0);
         
-        // 卵の形状（楕円体）
-        const eggGeometry = new THREE.SphereGeometry(20, 16, 16);
-        eggGeometry.scale(1, 1.3, 1);
+        // 卵の外殻（より卵らしい形状）
+        const eggGeometry = new THREE.SphereGeometry(18, 24, 24);
+        eggGeometry.scale(1, 1.4, 1); // 縦長の卵形
         
-        const eggMaterial = new THREE.MeshPhongMaterial({ 
-            color: 0xFFE4B5,
+        // 卵殻のマテリアル（真珠のような質感）
+        const eggMaterial = new THREE.MeshPhysicalMaterial({ 
+            color: 0xFFF8DC,
+            roughness: 0.1,
+            metalness: 0.1,
+            clearcoat: 0.3,
+            clearcoatRoughness: 0.1,
             transparent: true,
             opacity: 0.95,
-            emissive: 0x332211,
-            emissiveIntensity: 0.1
+            transmission: 0.1 // 半透明効果
         });
         
         const eggMesh = new THREE.Mesh(eggGeometry, eggMaterial);
@@ -363,10 +431,53 @@ class ThreeDRenderer {
         eggMesh.receiveShadow = true;
         group.add(eggMesh);
         
-        // 内部の光
-        const innerLight = new THREE.PointLight(0xFFD700, 0.5, 50);
+        // 内部の発光体（生命力を表現）
+        const innerGlowGeometry = new THREE.SphereGeometry(12, 16, 16);
+        const innerGlowMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFFD700,
+            transparent: true,
+            opacity: 0.4,
+            blending: THREE.AdditiveBlending
+        });
+        
+        const innerGlow = new THREE.Mesh(innerGlowGeometry, innerGlowMaterial);
+        group.add(innerGlow);
+        
+        // 魔法的なスポット模様
+        for (let i = 0; i < 5; i++) {
+            const spotGeometry = new THREE.SphereGeometry(2, 8, 8);
+            const spotMaterial = new THREE.MeshBasicMaterial({
+                color: 0xDDA0DD,
+                transparent: true,
+                opacity: 0.6
+            });
+            
+            const spot = new THREE.Mesh(spotGeometry, spotMaterial);
+            spot.position.set(
+                (Math.random() - 0.5) * 30,
+                (Math.random() - 0.5) * 40,
+                (Math.random() - 0.5) * 30
+            );
+            group.add(spot);
+        }
+        
+        // 内部の点光源（神秘的な光）
+        const innerLight = new THREE.PointLight(0xFFD700, 0.8, 100);
         innerLight.position.set(0, 0, 0);
         group.add(innerLight);
+        
+        // 周囲のオーラエフェクト
+        const auraGeometry = new THREE.SphereGeometry(25, 16, 16);
+        const auraMaterial = new THREE.MeshBasicMaterial({
+            color: 0xDDA0DD,
+            transparent: true,
+            opacity: 0.2,
+            blending: THREE.AdditiveBlending,
+            side: THREE.BackSide
+        });
+        
+        const aura = new THREE.Mesh(auraGeometry, auraMaterial);
+        group.add(aura);
         
         // アニメーション用データ
         group.userData = {
@@ -374,12 +485,16 @@ class ThreeDRenderer {
             createdAt: Date.now(),
             swayPhase: Math.random() * Math.PI * 2,
             pulsePhase: Math.random() * Math.PI * 2,
-            baseY: worldPos.y
+            baseY: worldPos.y,
+            rotationSpeed: 0.01,
+            innerGlow: innerGlow,
+            aura: aura
         };
         
         this.scene.add(group);
         this.eggs.set(id, group);
         
+        Utils.log(`Realistic 3D egg created at (${worldPos.x}, ${worldPos.y})`);
         return group;
     }
     
