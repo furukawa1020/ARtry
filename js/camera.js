@@ -248,13 +248,31 @@ class CameraManager {
     
     // カメラフレームを Three.js テクスチャとして取得
     getThreeTexture() {
-        if (!this.isInitialized || !this.video) return null;
+        Utils.log(`Getting Three texture - initialized: ${this.isInitialized}, video: ${!!this.video}`);
         
-        const texture = new THREE.VideoTexture(this.video);
-        texture.minFilter = THREE.LinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-        texture.format = THREE.RGBFormat;
-        return texture;
+        if (!this.isInitialized || !this.video) {
+            Utils.warn('Cannot create texture: camera not initialized or video not available');
+            return null;
+        }
+        
+        if (this.video.videoWidth === 0 || this.video.videoHeight === 0) {
+            Utils.warn('Video dimensions are 0, texture not ready yet');
+            return null;
+        }
+        
+        try {
+            const texture = new THREE.VideoTexture(this.video);
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.format = THREE.RGBFormat;
+            texture.flipY = false; // カメラ映像の場合は通常false
+            
+            Utils.log(`Video texture created: ${this.video.videoWidth}x${this.video.videoHeight}`);
+            return texture;
+        } catch (error) {
+            Utils.error('Failed to create video texture:', error);
+            return null;
+        }
     }
     
     // 解像度取得

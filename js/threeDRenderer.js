@@ -12,6 +12,10 @@ class ThreeDRenderer {
         this.frogs = new Map();
         this.eggs = new Map();
         
+        // カメラ背景
+        this.cameraBackground = null;
+        this.videoTexture = null;
+        
         // アニメーション
         this.clock = new THREE.Clock();
         this.animationId = null;
@@ -89,6 +93,68 @@ class ThreeDRenderer {
         accentLight.position.set(-100, 50, 100);
         this.scene.add(accentLight);
         this.lights.accent = accentLight;
+    }
+    
+    // カメラ背景設定
+    setCameraBackground(cameraManager) {
+        if (!cameraManager || !cameraManager.isInitialized) {
+            // カメラが無い場合はデフォルト背景
+            this.scene.background = new THREE.Color(0x1a0033);
+            Utils.log('Using default background - no camera');
+            return;
+        }
+        
+        try {
+            // カメラのVideoTexture取得
+            this.videoTexture = cameraManager.getThreeTexture();
+            
+            if (this.videoTexture) {
+                // カメラの解像度取得
+                const resolution = cameraManager.getResolution();
+                const aspectRatio = resolution.width / resolution.height;
+                const screenAspect = window.innerWidth / window.innerHeight;
+                
+                // 画面に合わせてスケール調整
+                let width = 2;
+                let height = 2;
+                if (aspectRatio > screenAspect) {
+                    height = width / aspectRatio;
+                } else {
+                    width = height * aspectRatio;
+                }
+                
+                // 背景用ジオメトリ作成（画面全体をカバー）
+                const geometry = new THREE.PlaneGeometry(width * screenAspect, height);
+                const material = new THREE.MeshBasicMaterial({ 
+                    map: this.videoTexture,
+                    side: THREE.DoubleSide,
+                    transparent: false
+                });
+                
+                // 既存の背景を削除
+                if (this.cameraBackground) {
+                    this.scene.remove(this.cameraBackground);
+                    this.cameraBackground.geometry.dispose();
+                    this.cameraBackground.material.dispose();
+                }
+                
+                this.cameraBackground = new THREE.Mesh(geometry, material);
+                this.cameraBackground.position.z = -500; // 背景の奥に配置
+                this.cameraBackground.name = 'cameraBackground';
+                this.scene.add(this.cameraBackground);
+                
+                // シーン背景を透明に
+                this.scene.background = null;
+                
+                Utils.log(`Camera background set up: ${resolution.width}x${resolution.height}, aspect: ${aspectRatio}`);
+            } else {
+                Utils.warn('Failed to get video texture');
+                this.scene.background = new THREE.Color(0x1a0033);
+            }
+        } catch (error) {
+            Utils.error('Failed to set camera background:', error);
+            this.scene.background = new THREE.Color(0x1a0033);
+        }
     }
     
     // 3D魔法陣作成

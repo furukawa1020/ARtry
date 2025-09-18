@@ -108,6 +108,12 @@ async function initializeCamera() {
         await cameraManager.initialize();
         Utils.log('Camera system ready');
         updateCameraStatus('📱 カメラ: 起動中');
+        
+        // 3Dレンダラーにカメラ背景を設定
+        if (use3DMode && threeDRenderer) {
+            threeDRenderer.setCameraBackground(cameraManager);
+        }
+        
     } catch (error) {
         Utils.warn('Camera initialization failed, using fallback');
         updateCameraStatus('📱 カメラ: 静的背景');
@@ -145,6 +151,15 @@ async function initializeCameraFromUser() {
     try {
         await initializeCamera();
         updateCameraStatus('📱 カメラ: 準備完了 ✅');
+        
+        // 3D背景更新を再試行
+        if (use3DMode && threeDRenderer && cameraManager.isInitialized) {
+            setTimeout(() => {
+                threeDRenderer.setCameraBackground(cameraManager);
+                Utils.log('3D camera background updated');
+            }, 1000); // カメラが完全に起動するまで少し待つ
+        }
+        
     } catch (error) {
         Utils.error('Camera initialization from user action failed:', error);
         updateCameraStatus('📱 カメラ: 失敗 ❌');
