@@ -72,30 +72,30 @@ class ThreeDRenderer {
         }
     }
     
-    // ライティング設定
+    // ライティング設定（カメラ背景に配慮した軽量版）
     setupLighting() {
-        // 環境光（全体の基本照明）
-        const ambientLight = new THREE.AmbientLight(0x4a0080, 0.3);
+        // 環境光（非常に弱く、白っぽく）
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
         this.scene.add(ambientLight);
         this.lights.ambient = ambientLight;
         
-        // 魔法的な点光源
-        const magicLight = new THREE.PointLight(0xC846FF, 1.0, 500);
+        // 魔法的な点光源（強度を大幅に下げる）
+        const magicLight = new THREE.PointLight(0xC846FF, 0.3, 300);
         magicLight.position.set(0, 100, 200);
-        magicLight.castShadow = true;
-        magicLight.shadow.mapSize.width = 1024;
-        magicLight.shadow.mapSize.height = 1024;
+        magicLight.castShadow = false; // 影を無効にして軽量化
         this.scene.add(magicLight);
         this.lights.magic = magicLight;
         
-        // 追加の色味ライト
-        const accentLight = new THREE.DirectionalLight(0x8a2be2, 0.5);
+        // 追加の色味ライト（非常に弱く）
+        const accentLight = new THREE.DirectionalLight(0x8a2be2, 0.1);
         accentLight.position.set(-100, 50, 100);
         this.scene.add(accentLight);
         this.lights.accent = accentLight;
+        
+        console.log('Lighting setup with reduced intensity for camera background');
     }
     
-    // カメラ背景設定（修正版）
+    // カメラ背景設定（背景プレーン使用）
     setCameraBackground(cameraManager) {
         console.log('setCameraBackground called:', !!cameraManager, cameraManager?.isInitialized);
         
@@ -108,22 +108,54 @@ class ThreeDRenderer {
         }
         
         try {
+            // 既存の背景メッシュを削除
+            if (this.cameraBackground) {
+                this.scene.remove(this.cameraBackground);
+                if (this.cameraBackground.geometry) this.cameraBackground.geometry.dispose();
+                if (this.cameraBackground.material) this.cameraBackground.material.dispose();
+            }
+            
             // カメラのVideoTexture取得
             this.videoTexture = cameraManager.getThreeTexture();
             console.log('Got video texture:', !!this.videoTexture);
             
             if (this.videoTexture) {
-                // 直接シーン背景に設定（最も確実な方法）
-                this.scene.background = this.videoTexture;
+                // シーン背景を透明に
+                this.scene.background = null;
                 
-                // テクスチャ設定を調整
+                // 背景プレーンを作成（カメラの視野全体をカバー）
+                const aspect = window.innerWidth / window.innerHeight;
+                const distance = this.camera.position.z;
+                const vFOV = this.camera.fov * Math.PI / 180;
+                const height = 2 * Math.tan(vFOV / 2) * distance;
+                const width = height * aspect;
+                
+                const backgroundGeometry = new THREE.PlaneGeometry(width, height);
+                const backgroundMaterial = new THREE.MeshBasicMaterial({
+                    map: this.videoTexture,
+                    side: THREE.FrontSide,
+                    depthTest: false,
+                    depthWrite: false
+                });
+                
+                this.cameraBackground = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
+                
+                // 背景を最背面に配置
+                this.cameraBackground.position.z = -distance + 10;
+                this.cameraBackground.renderOrder = -1000;
+                
+                // シーンに追加
+                this.scene.add(this.cameraBackground);
+                
+                // テクスチャ設定
                 this.videoTexture.minFilter = THREE.LinearFilter;
                 this.videoTexture.magFilter = THREE.LinearFilter;
                 this.videoTexture.format = THREE.RGBFormat;
                 this.videoTexture.flipY = false;
+                this.videoTexture.needsUpdate = true;
                 
-                console.log('Camera background texture set as scene background');
-                Utils.log('Camera background texture set as scene background');
+                console.log('Camera background plane created and added to scene');
+                Utils.log('Camera background plane created and added to scene');
                 
             } else {
                 console.warn('Failed to get video texture from camera');
@@ -416,7 +448,7 @@ class ThreeDRenderer {
         const innerGlowMaterial = new THREE.MeshBasicMaterial({
             color: 0xFFD700,
             transparent: true,
-            opacity: 0.4,
+            opacity: 0.2, // 透明度を下げる
             blending: THREE.AdditiveBlending
         });
         
@@ -429,7 +461,7 @@ class ThreeDRenderer {
             const spotMaterial = new THREE.MeshBasicMaterial({
                 color: 0xDDA0DD,
                 transparent: true,
-                opacity: 0.6
+                opacity: 0.3 // 透明度を下げる
             });
             
             const spot = new THREE.Mesh(spotGeometry, spotMaterial);
@@ -442,7 +474,7 @@ class ThreeDRenderer {
         }
         
         // 内部の点光源（神秘的な光）
-        const innerLight = new THREE.PointLight(0xFFD700, 0.8, 100);
+        const innerLight = new THREE.PointLight(0xFFD700, 0.2, 80); // 強度を大幅に下げる
         innerLight.position.set(0, 0, 0);
         group.add(innerLight);
         
@@ -645,6 +677,18 @@ class ThreeDRenderer {
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(window.innerWidth, window.innerHeight);
+        
+        // 背景プレーンのサイズも更新
+        if (this.cameraBackground) {
+            const aspect = window.innerWidth / window.innerHeight;
+            const distance = this.camera.position.z;
+            const vFOV = this.camera.fov * Math.PI / 180;
+            const height = 2 * Math.tan(vFOV / 2) * distance;
+            const width = height * aspect;
+            
+            this.cameraBackground.geometry.dispose();
+            this.cameraBackground.geometry = new THREE.PlaneGeometry(width, height);
+        }
     }
     
     // システム破棄
