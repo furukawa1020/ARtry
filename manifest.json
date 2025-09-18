@@ -12,13 +12,13 @@
   "categories": ["entertainment", "games", "utilities"],
   "icons": [
     {
-      "src": "/assets/images/icon.svg",
+      "src": "assets/images/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/favicon.svg",
+      "src": "favicon.svg",
       "sizes": "32x32",
       "type": "image/svg+xml",
       "purpose": "any"
@@ -30,6 +30,8 @@
     "webgl"
   ],
   "permissions": [
-    "camera"
-  ]
+    "camera",
+    "getUserMedia"
+  ],
+  "prefer_related_applications": false
 }

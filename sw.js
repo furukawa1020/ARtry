@@ -1,5 +1,5 @@
 // Service Worker - オフライン対応・PWA機能
-const CACHE_NAME = 'ar-summon-v1.1.0';
+const CACHE_NAME = 'ar-summon-v1.2.0'; // バージョン強制更新
 const urlsToCache = [
   '/',
   '/index.html',
