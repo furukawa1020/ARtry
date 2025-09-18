@@ -124,6 +124,31 @@
             <div class="status" id="performance">⚡ FPS: --</div>
         </div>
         
+        <!-- カメラ許可ガイド -->
+        <div id="camera-guide" style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(200, 70, 255, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 2000;
+            font-size: 16px;
+            max-width: 300px;
+        ">
+            <h3>📱 カメラアクセス許可</h3>
+            <p>AR体験のためカメラが必要です</p>
+            <p>ブラウザの「許可」をタップしてください</p>
+            <button onclick="this.parentElement.style.display='none'" 
+                    style="background: white; color: #C846FF; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                OK
+            </button>
+        </div>
+        
         <!-- 操作説明 -->
         <div class="instructions">
             画面をタップして魔法陣を展開 ✨

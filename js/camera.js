@@ -40,8 +40,29 @@ class CameraManager {
         try {
             Utils.log('Requesting camera access...');
             
-            // カメラストリーム取得
-            this.stream = await navigator.mediaDevices.getUserMedia(this.constraints);
+            // HTTPS確認
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                Utils.warn('Camera requires HTTPS. Using fallback background.');
+                throw new Error('HTTPS required for camera access');
+            }
+            
+            // カメラストリーム取得（フォールバック付き）
+            try {
+                this.stream = await navigator.mediaDevices.getUserMedia(this.constraints);
+            } catch (error) {
+                // 背面カメラで失敗した場合、フロントカメラを試す
+                Utils.warn('Environment camera failed, trying user camera');
+                const fallbackConstraints = {
+                    video: {
+                        width: { ideal: CONFIG.CAMERA.WIDTH },
+                        height: { ideal: CONFIG.CAMERA.HEIGHT },
+                        frameRate: { ideal: CONFIG.CAMERA.FRAME_RATE },
+                        facingMode: { ideal: "user" } // フロントカメラ
+                    },
+                    audio: false
+                };
+                this.stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+            }
             
             // video要素作成
             this.video = document.createElement('video');
@@ -86,16 +107,21 @@ class CameraManager {
         let errorMessage = 'カメラエラー';
         
         if (error.name === 'NotAllowedError') {
-            errorMessage = 'カメラアクセスが拒否されました';
+            errorMessage = 'カメラアクセスが拒否されました。ブラウザの設定でカメラを許可してください。';
         } else if (error.name === 'NotFoundError') {
-            errorMessage = 'カメラが見つかりません';
+            errorMessage = 'カメラが見つかりません。デバイスにカメラが接続されているか確認してください。';
         } else if (error.name === 'NotReadableError') {
-            errorMessage = 'カメラが使用中です';
+            errorMessage = 'カメラが使用中です。他のアプリを閉じてから再試行してください。';
         } else if (error.name === 'OverconstrainedError') {
-            errorMessage = 'カメラ設定エラー';
+            errorMessage = 'カメラ設定エラー。デバイスがサポートしていない解像度です。';
+        } else if (error.message === 'HTTPS required for camera access') {
+            errorMessage = 'カメラにはHTTPS接続が必要です。';
         }
         
         this.updateUI(errorMessage);
+        
+        // ユーザーガイダンス表示
+        this.showCameraGuide();
         
         // フォールバック: 静的背景を使用
         this.createFallbackBackground();
@@ -243,5 +269,22 @@ class CameraManager {
             frameRate: this.video.getVideoPlaybackQuality ? 
                 this.video.getVideoPlaybackQuality().totalVideoFrames : 'N/A'
         };
+    }
+    
+    // カメラガイダンス表示
+    showCameraGuide() {
+        // UI要素での表示を優先
+        const guideElement = document.getElementById('camera-guide');
+        if (guideElement) {
+            guideElement.style.display = 'block';
+            return;
+        }
+        
+        // フォールバック: アラート表示
+        if (typeof window !== 'undefined') {
+            setTimeout(() => {
+                alert(`📱 カメラアクセスガイド:\n\n1. ブラウザの「許可」ボタンをクリック\n2. アドレスバーのカメラアイコンをクリック\n3. 「このサイトでカメラを常に許可」を選択\n\n💡 セキュリティのため、HTTPS接続が必要です。`);
+            }, 1000);
+        }
     }
 }
