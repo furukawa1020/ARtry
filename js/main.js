@@ -140,7 +140,20 @@ async function initializeCameraFromUser() {
     const guide = document.getElementById('camera-guide');
     if (guide) guide.style.display = 'none';
     
-    await initializeCamera();
+    updateCameraStatus('📱 カメラ: 初期化中...');
+    
+    try {
+        await initializeCamera();
+        updateCameraStatus('📱 カメラ: 準備完了 ✅');
+    } catch (error) {
+        Utils.error('Camera initialization from user action failed:', error);
+        updateCameraStatus('📱 カメラ: 失敗 ❌');
+        
+        // エラーガイダンスを表示
+        if (cameraManager) {
+            cameraManager.showCameraGuide();
+        }
+    }
 }
 
 // カメラ初期化スキップ
@@ -183,6 +196,16 @@ function updateCameraStatus(status) {
     const statusElement = document.getElementById('camera-status');
     if (statusElement) {
         statusElement.textContent = status;
+    }
+    
+    // 失敗時に再試行ボタンを表示
+    const retryBtn = document.getElementById('retry-camera-btn');
+    if (retryBtn) {
+        if (status.includes('失敗') || status.includes('❌')) {
+            retryBtn.style.display = 'block';
+        } else if (status.includes('準備完了') || status.includes('✅')) {
+            retryBtn.style.display = 'none';
+        }
     }
 }
 

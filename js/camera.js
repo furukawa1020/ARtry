@@ -34,34 +34,85 @@ class CameraManager {
     // カメラ初期化
     async initialize() {
         if (!this.isSupported) {
+            Utils.error('Camera not supported by browser');
             throw new Error('Camera not supported');
         }
         
         try {
             Utils.log('Requesting camera access...');
+            Utils.log(`Protocol: ${location.protocol}, Hostname: ${location.hostname}`);
             
-            // HTTPS確認
-            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-                Utils.warn('Camera requires HTTPS. Using fallback background.');
+            // HTTPS確認（より詳細）
+            const isSecureContext = window.isSecureContext;
+            const isHTTPS = location.protocol === 'https:';
+            const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            
+            Utils.log(`Secure context: ${isSecureContext}, HTTPS: ${isHTTPS}, Localhost: ${isLocalhost}`);
+            
+            if (!isSecureContext && !isLocalhost) {
+                Utils.error('Camera requires secure context (HTTPS)');
                 throw new Error('HTTPS required for camera access');
             }
             
-            // カメラストリーム取得（フォールバック付き）
+            // デバイス一覧を取得
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+            Utils.log(`Found ${videoDevices.length} video devices:`, videoDevices);
+            
+            if (videoDevices.length === 0) {
+                throw new Error('No camera devices found');
+            }
+            
+            // カメラストリーム取得（段階的フォールバック）
+            let streamObtained = false;
+            let lastError = null;
+            
+            // 1. 背面カメラを試す
             try {
+                Utils.log('Attempting to access environment camera...');
                 this.stream = await navigator.mediaDevices.getUserMedia(this.constraints);
+                streamObtained = true;
+                Utils.log('Environment camera access successful');
             } catch (error) {
-                // 背面カメラで失敗した場合、フロントカメラを試す
-                Utils.warn('Environment camera failed, trying user camera');
-                const fallbackConstraints = {
-                    video: {
-                        width: { ideal: CONFIG.CAMERA.WIDTH },
-                        height: { ideal: CONFIG.CAMERA.HEIGHT },
-                        frameRate: { ideal: CONFIG.CAMERA.FRAME_RATE },
-                        facingMode: { ideal: "user" } // フロントカメラ
-                    },
-                    audio: false
-                };
-                this.stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+                lastError = error;
+                Utils.warn('Environment camera failed:', error.name, error.message);
+                
+                // 2. フロントカメラを試す
+                try {
+                    Utils.log('Attempting to access user camera...');
+                    const fallbackConstraints = {
+                        video: {
+                            width: { ideal: CONFIG.CAMERA.WIDTH },
+                            height: { ideal: CONFIG.CAMERA.HEIGHT },
+                            frameRate: { ideal: CONFIG.CAMERA.FRAME_RATE },
+                            facingMode: { ideal: "user" }
+                        },
+                        audio: false
+                    };
+                    this.stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+                    streamObtained = true;
+                    Utils.log('User camera access successful');
+                } catch (error2) {
+                    lastError = error2;
+                    Utils.warn('User camera failed:', error2.name, error2.message);
+                    
+                    // 3. 基本的な制約で試す
+                    try {
+                        Utils.log('Attempting basic camera access...');
+                        const basicConstraints = { video: true, audio: false };
+                        this.stream = await navigator.mediaDevices.getUserMedia(basicConstraints);
+                        streamObtained = true;
+                        Utils.log('Basic camera access successful');
+                    } catch (error3) {
+                        lastError = error3;
+                        Utils.error('All camera access attempts failed:', error3.name, error3.message);
+                        throw error3;
+                    }
+                }
+            }
+            
+            if (!streamObtained) {
+                throw lastError || new Error('Camera access failed');
             }
             
             // video要素作成
@@ -276,6 +327,25 @@ class CameraManager {
         // UI要素での表示を優先
         const guideElement = document.getElementById('camera-guide');
         if (guideElement) {
+            guideElement.innerHTML = `
+                <h3>📱 カメラアクセス問題</h3>
+                <p>カメラが使用できません</p>
+                <div style="text-align: left; margin: 10px 0; font-size: 14px;">
+                    <strong>解決方法:</strong><br>
+                    • ブラウザの「許可」をタップ<br>
+                    • アドレスバーのカメラアイコンをクリック<br>
+                    • 他のアプリでカメラを使用していないか確認<br>
+                    • ページを再読み込み
+                </div>
+                <button onclick="location.reload()" 
+                        style="background: white; color: #C846FF; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px;">
+                    再試行
+                </button>
+                <button onclick="skipCameraInit()" 
+                        style="background: rgba(255,255,255,0.3); color: white; border: 1px solid white; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px;">
+                    静的背景で続行
+                </button>
+            `;
             guideElement.style.display = 'block';
             return;
         }
@@ -283,7 +353,12 @@ class CameraManager {
         // フォールバック: アラート表示
         if (typeof window !== 'undefined') {
             setTimeout(() => {
-                alert(`📱 カメラアクセスガイド:\n\n1. ブラウザの「許可」ボタンをクリック\n2. アドレスバーのカメラアイコンをクリック\n3. 「このサイトでカメラを常に許可」を選択\n\n💡 セキュリティのため、HTTPS接続が必要です。`);
+                const userConfirm = confirm('📱 カメラアクセスに失敗しました。\n\n• ブラウザの「許可」をクリック\n• 他のアプリでカメラを使用していないか確認\n• ページを再読み込み\n\nOK: 再試行  Cancel: 静的背景で続行');
+                if (userConfirm) {
+                    location.reload();
+                } else if (typeof skipCameraInit === 'function') {
+                    skipCameraInit();
+                }
             }, 1000);
         }
     }
