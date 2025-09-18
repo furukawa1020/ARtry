@@ -82,7 +82,21 @@ ARtry/
 │   ├── magicCircle.js     # 魔法陣システム
 │   ├── frog.js            # カエル召喚システム
 │   ├── egg.js             # 卵召喚システム
+```
+ARtry/
+├── index.html              # メインHTML
+├── manifest.json           # PWA設定
+├── netlify.toml           # Netlify設定
+├── sw.js                  # Service Worker
+├── js/
+│   ├── config.js          # 設定・定数
+│   ├── utils.js           # ユーティリティ関数
+│   ├── camera.js          # カメラ管理
+│   ├── magicCircle.js     # 魔法陣システム
+│   ├── frog.js            # カエル召喚システム
+│   ├── egg.js             # 卵召喚システム
 │   ├── audio.js           # 音響システム
+│   ├── threeDRenderer.js  # 3D描画システム
 │   └── main.js            # メインアプリケーション
 └── assets/
     ├── images/            # 画像ファイル
