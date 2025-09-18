@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AR召喚システム - 魔法陣＋カエル＋卵</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Arial', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+        
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #ui-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            color: #fff;
+            font-size: 14px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        
+        .status {
+            margin-bottom: 5px;
+        }
+        
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #fff;
+            text-align: center;
+            font-size: 16px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            opacity: 0.8;
+        }
+        
+        /* ローディング画面 */
+        #loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a0033, #4a0080);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            transition: opacity 0.5s ease;
+        }
+        
+        .loading-text {
+            color: #C800FF;
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #C800FF;
+        }
+        
+        .loading-circle {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(200, 0, 255, 0.3);
+            border-top: 3px solid #C800FF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <!-- ローディング画面 -->
+        <div id="loading">
+            <div class="loading-text">魔法陣展開中...</div>
+            <div class="loading-circle"></div>
+        </div>
+        
+        <!-- UI オーバーレイ -->
+        <div id="ui-overlay">
+            <div class="status" id="camera-status">📱 カメラ: 準備中</div>
+            <div class="status" id="objects-count">🐸 召喚物: 0</div>
+            <div class="status" id="performance">⚡ FPS: --</div>
+        </div>
+        
+        <!-- 操作説明 -->
+        <div class="instructions">
+            画面をタップして魔法陣を展開 ✨
+        </div>
+    </div>
+
+    <!-- CDNライブラリ読み込み -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <!-- アプリケーションスクリプト -->
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/camera.js"></script>
+    <script src="js/magicCircle.js"></script>
+    <script src="js/frog.js"></script>
+    <script src="js/egg.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/threeDRenderer.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
