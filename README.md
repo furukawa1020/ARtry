@@ -114,24 +114,49 @@ ARtry/
 - Canvas 2D/WebGL
 - ES6+ JavaScript
 
-## 🚀 起動方法
+## 🚀 デプロイ方法
 
-### ローカル開発
+### **Netlify（推奨）**🌟
 ```bash
-# HTTPSサーバーが必要（カメラアクセスのため）
-# Python 3の場合
-python -m http.server 8000
+# 1. プロジェクトをGitHubにプッシュ
+git init
+git add .
+git commit -m "AR召喚システム完成"
+git push origin main
 
-# Node.jsの場合
-npx http-server -p 8000
-
-# その後 https://localhost:8000 でアクセス
+# 2. Netlifyでデプロイ
+# - netlify.com でGitHub連携
+# - ARtryリポジトリを選択
+# - 自動デプロイ完了！
 ```
 
-### 本番デプロイ
-1. 全ファイルをWebサーバーにアップロード
-2. HTTPS必須（カメラアクセスのため）
-3. モバイルブラウザでアクセス
+#### **ドラッグ&ドロップデプロイ**
+1. [netlify.com](https://netlify.com) にアクセス
+2. `ARtry`フォルダを"Deploy to Netlify"エリアにドラッグ
+3. 即座にHTTPS URLが発行される
+
+#### **Netlify機能フル活用**
+- ✅ **自動HTTPS**: カメラアクセス対応
+- ✅ **高速CDN**: 世界中で快適動作  
+- ✅ **PWA対応**: オフライン動作・インストール可能
+- ✅ **カスタムドメイン**: 独自ドメイン設定可能
+
+### **その他のデプロイ先**
+- **Vercel**: `vercel --prod`
+- **GitHub Pages**: `gh-pages`ブランチ
+- **Firebase Hosting**: `firebase deploy`
+
+## 🔧 本番環境設定
+
+### Netlify最適化済み
+- `netlify.toml`: ヘッダー・キャッシュ設定
+- `manifest.json`: PWA設定
+- `sw.js`: Service Worker（オフライン対応）
+
+### パフォーマンス
+- **CDN最適化**: p5.js, Three.js
+- **キャッシュ戦略**: 静的リソース長期キャッシュ
+- **圧縮**: Gzip/Brotli自動対応
 
 ## 🔧 カスタマイズ
 
